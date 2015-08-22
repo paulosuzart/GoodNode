@@ -51,26 +51,24 @@ buildSystem inputList = fromList $ getZipList $ makeNode <$> ZipList [0..] <*> Z
 -- Returns Nothing if the deepest Node is actually a Good Node.
 findLastBad :: NodeSystem -> Node -> Maybe Node
 findLastBad _ (Node _ 0 _) = Nothing
-findLastBad pool node  =
-  if index node == nextIndex node then
-    Just node
-  else
-    case lookup (nextIndex node) pool of
-      Nothing -> Just node
-      Just n -> findLastBad (delete (index node) pool) n
+findLastBad _ node@(Node i t _) | i == t = Just node
+findLastBad pool node =
+  case lookup (nextIndex node) pool of
+    Nothing -> Just node
+    Just n -> findLastBad (delete (index node) pool) n
 
 -- |This function simply produces a new NodeSystem with the given Node updated with
 -- reconnected = True and nextIndex = 0, given that the default behavior for deep Bad nodes
 -- is just point them straight to a already known Good Node (Node 0 _ _).
 reconnectIfBad :: NodeSystem -> Node -> NodeSystem
-reconnectIfBad pool node =
-  case (==) <$> Just node <*> node' of
-    Just True ->
-      case findLastBad pool node of
-        Just n -> update (\ _ ->  Just n { nextIndex = 0, reconnected = True} ) (index n) pool
-        _ -> pool
-    _ -> pool
+reconnectIfBad pool node
+  | Just True <- alreadyChanged = pool
+  | Just n <- badNode =
+      update (\ _ ->  Just n { nextIndex = 0, reconnected = True} ) (index n) pool
+  | otherwise = pool
   where node' = lookup (index node) pool
+        alreadyChanged = (/=) <$> Just node <*> node'
+        badNode = findLastBad pool node
 
 -- |This is the code function that simply 'Map.foldl' over a 'NodeSystem' producing a new one
 -- with all Good Nodes with minimum moves. Then it how many nodes where reconnected.
