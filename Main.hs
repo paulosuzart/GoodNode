@@ -1,3 +1,9 @@
+{-|
+Module      : Good Node
+Description : impl for Hacker Rank
+
+Used at blog post: <http://paulosuzart.github.io/blog/2015/08/21/how-much-functional-are-you/>
+-}
 module Main(
 Node,
 NodeSystem,
